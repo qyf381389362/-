@@ -814,4 +814,86 @@
 
     不同浏览器支持不同的编解码器，因此一般来说指定多种格式的媒体来源是必须的。
 
-20. ​
+20. **JSON**
+
+    JSON是一个轻量级的数据格式，可以简化表示复杂数据结构的工作量。JSON使用JavaScript语法的子集表示对象、数组、字符串、数值、布尔值和null。
+
+    关于JSON，最重要的是要理解它是一种数据格式，不是编程语言。虽然具有相同的语法形式，但JSON并不从属于JavaScript。而且，并不是只有JavaScript才使用JSON，毕竟JSON只是一种数据格式。JSON不支持变量、函数或对象实例，它就是一种表示结构化数据的格式。
+
+    JSON字符串与JavaScript字符串的最大区别在于，JSON字符串必须使用双引号（单引号会导致语法错误）。
+
+    ECMAScript 5定义了一个原生的JSON对象，可以用来将对象序列化为JSON字符串或者将JSON数据解析为JavaScript对象。JSON.stringify()和JSON.parse()方法分别用来实现上述两项功能。这两个方法都有一些选项，通过它们可以改变过滤的方式，或者改变序列化的过程。
+
+21. **JS数组的splice()方法**
+
+    splice()方法恐怕要算是最强大的数组方法了，它有很多种用法。它的主要用途是向数组的中部插入值。使用方法如下：
+
+    1. 删除：可以删除任意数量的项，只需指定2个参数：要删除的第一项位置和要删除的项数。例如，splice(0,2)会删除数组中的前两项。
+
+    2. 插入：可以向指定位置插入任意数量的项，只需提供3 个参数：起始位置、0（要删除的项数）和要插入的项。如果要插入多个项，可以再传入第四、第五，以至任意多个项。例如，splice(2,0,"red","green")会从当前数组的位置2 开始插入字符串"red"和"green"。
+
+    3. 替换：可以向指定位置插入任意数量的项，且同时删除任意数量的项，只需指定3 个参数：起始位置、要删除的项数和要插入的任意数量的项。插入的项数不必与删除的项数相等。例如，splice (2,1,"red","green")会删除当前数组位置2 的项，然后再从位置2 开始插入字符串"red"和"green"。
+       splice()方法始终都会返回一个数组，该数组中包含从原始数组中删除的项（如果没有删除任何项，则返回一个空数组）。下面的代码展示了上述3 种使用splice()方法的方式。
+
+       ```javascript
+       var colors = ["red", "green", "blue"];
+       var removed = colors.splice(0,1); // 删除第一项
+       alert(colors); // green,blue
+       alert(removed); // red，返回的数组中只包含一项
+
+       removed = colors.splice(1, 0, "yellow", "orange"); // 从位置1 开始插入两项
+       alert(colors); // green,yellow,orange,blue
+       alert(removed); // 返回的是一个空数组
+
+       removed = colors.splice(1, 1, "red", "purple"); // 插入两项，删除一项
+       alert(colors); // green,red,purple,orange,blue
+       alert(removed); // yellow，返回的数组中只包含一项
+       ```
+
+       上面的例子首先定义了一个包含3 项的数组colors。第一次调用splice()方法只是删除了这个数组的第一项，之后colors 还包含"green"和"blue"两项。第二次调用splice()方法时在位置1 插入了两项，结果colors 中包含"green"、"yellow"、"orange"和"blue"。这一次操作没有删除项，因此返回了一个空数组。最后一次调用splice()方法删除了位置1 处的一项，然后又插入了"red"和"purple"。在完成以上操作之后，数组colors 中包含的是"green"、"red"、"purple"、"orange"和"blue"。
+
+22. **跨域源资源共享**
+
+    通过XHR（XMLHttpRequest）实现Ajax通信的一个主要限制，来源于跨域安全策略。默认情况下，XHR对象只能访问与包含它的页面位于同一个域中的资源。这种安全策略可以预防某些恶意行为。
+
+    CORS(Cross-Origin Resource Sharing，跨域源资源共享)，其背后的基本思想就是使用自定义的HTTP头部让浏览器与服务器进行沟通，从而决定请求或响应是应该成功，还是应该失败。
+
+    **跨浏览器的CORS：**
+
+    检测XHR是否支持CORS的最简单方式，就是检查是否存在withCredentials属性。再结合检测XDomainRequest对象是否存在，就可以兼顾所有浏览器了。
+
+    ```javascript
+    function createCORSRequest(method,url){
+      var xhr = new XMLHttpRequest();
+      if("withCredentials" in xhr){
+        xhr.open(method, url, true);
+      }else if(typeof XDomainRequest != "undefined"){
+        xhr = new XDomainRequest();
+        xhr.open(method,url);
+      }else{
+        xhr = null;
+      }
+      return xhr;
+    }
+    var request = createCORSRequest("get","http://www.somewhere-else.com/page/");
+    if(request){
+      request.onload = function(){
+        //对request.responseText 进行处理
+      };
+      request.send();
+    }
+    ```
+
+    **其他跨域技术：**
+
+    1. 图像Ping: 只能用于浏览器与服务器间的单向通信。
+    2. JSONP：是JSON with padding(填充式JSON或参数式JSON)的缩写，是应用JSON的一种新方法，在Web服务中非常流行。看起来与JSON差不多，只不过是被包含在函数调用中的JSON。它由两部分组成：回调函数和数据。优点在于能够直接访问响应文本，支持在浏览器与服务器之间双向通信。
+    3. Comet：Ajax是是一种从页面向服务器请求数据的技术，而Comet则是一种服务器向页面推送数据的技术。有两种实现Comet的方式：长轮询和流。
+    4. SSE（服务器发送事件）：是围绕只读Comet交互推出的API或者模式。
+    5. Web Sockets: 其目标是在一个单独的持久连接上提供全双工、双向通信。由于传递的数据包很小，因此Web Sockets非常适合移动应用。同源策略对Web Sockets不适用，因此可以通过它打开任何站点的连接。
+
+23. ​
+
+    ​
+
+24. ​
