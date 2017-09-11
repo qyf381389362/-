@@ -892,7 +892,46 @@
     4. SSE（服务器发送事件）：是围绕只读Comet交互推出的API或者模式。
     5. Web Sockets: 其目标是在一个单独的持久连接上提供全双工、双向通信。由于传递的数据包很小，因此Web Sockets非常适合移动应用。同源策略对Web Sockets不适用，因此可以通过它打开任何站点的连接。
 
-23. ​
+23. **减少全局变量污染**
+
+    JavaScirpt 可以很随意地定义全局变量来容纳你的应用的所有资源。遗憾的是，全局变量削弱了程序的灵活性，应该避免使用。
+
+    1. 最小化使用全局变量的方法之一是为你的应用只创建一个唯一的全局变量。
+
+       ```javascript
+       var MYAPP = {};
+       ```
+
+       该变量此时变成了你的应用的容器：
+
+       ```javascript
+       MYAPP.stooge = {
+           "first-name": "Joe",
+           "last-name": "Howard"
+       };
+       MYAPP.flight = {
+         airline: "Oceanic",
+         number: 815,
+         departure: {
+             IATA: "SYD",
+             time: "2004-09-22 14:55",
+             city: "Sydney"
+         },
+         arrival:{
+             IATA: "LAX",
+             time: "2004-09-23 10:42",
+             city: "Los Angeles"
+         }
+       };
+       ```
+
+       只要把全局性的资源都纳入一个名称空间之下，你的程序与其他应用程序、组件或类库之间发生冲突的可能性就会显著降低。你的程序也会变得更容易阅读，因为很明显，MYAPP.stooge指向的是顶层结构。
+
+    2. 闭包：
+
+       ​
+
+    3. ​
 
     ​
 
