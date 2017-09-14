@@ -156,3 +156,103 @@ WeakMap结构与Map结构基本类似。
 区别是它只接受对象作为键名，不接受其他类型的值作为键名。键名是对象的弱引用，当对象被回收后，WeakMap自动移除对应的键值对，WeakMap结构有助于防止内存泄漏。 
 
 由于WeakMap对象不可遍历，所以没有size属性。 
+
+#### 6.Iterator遍历器
+
+遍历器是一种接口，它为不同的数据结构提供了统一的访问机制。 
+如果一个数据结构具有遍历器接口，那么就可以依次处理该数据结构的成员。 
+当前javascript用来表示集合的数据结构有四种，分别是数组、对象、Set和Map，并且这四种数据结构可以相互嵌套使用，比如数组的成员可以是对象，对象的成员又可以是Set等等。 
+
+#### 7.Generator函数
+
+Generator函数是ES6新增的一种异步编程方案。 
+说明:Generator函数指的是一种新的语法结构,是一个遍历器对象生成器,它内部可以封装多个状态，非常适合用于异步操作。 
+
+Generator函数语法和普通的function函数类似，但是有三个不同点: 
+（1）function关键字和函数名称之间有一个星号（*）。 
+（2）函数体内可以使用yield语句。 
+（3）函数调用后不会立即执行，返回的是一个遍历器对象。 
+
+yield语句: 
+每一个yield语句定义不同的状态,它也是一个代码执行暂停标识。 
+yield语句不能在普通函数中使用，否则会报错。 
+调用Generator函数可以返回一个遍历器对象,要想访问Generator函数中的每一个状态，需要使用遍历器对象调用next()方法。 
+
+如果yield语句作为其他语句的一部分，那么必须使用小括号包裹，否则会报错 
+function *yuanku() { 
+  //console.log("欢迎来到" + yield "源库网");//报错 
+  console.log("欢迎来到" + (yield "源库网"));//正确 
+} 
+
+面试的时候可能问到的题类型：
+
+向next中传值，!!!此值作为上一个yield的返回值!!! 
+
+```javascript
+function* yuanku(num) { 
+  let x = 2 * (yield num); 
+  console.log('x='+x); 
+  let y = yield x*3; 
+  console.log('y='+y); 
+  console.log(x,y); 
+} 
+var g=yuanku(5); 
+console.log(g.next());
+console.log(g.next()); 
+console.log(g.next(3));
+console.log(g.next(3));
+```
+#### 8.Promise对象
+
+传统实现异步操作就是采用回调函数，回调函数方式本身没有什么问题，但是在多重回调层层嵌套的情况下，那么代码的可阅读性就会出现问题。
+Promise对象是一个新的异步操作解决方案，比原有的回调函数等方式更为合理
+Promise对象具有三种状态：Pending（等待）、Resolved（已完成）和Rejected（不能完成，出错了）。
+Promise对象状态的改变只有两种可能：Pending转变为Resolved或者Pending转变为Rejected。
+
+```javascript
+step1().then(step2).then(step3).then(step4).catch(function(err){
+  // do something when err
+});
+```
+#### 9.箭头函数
+
+如果箭头表达式仅仅就是简化了函数的命名，我们为什么要改变原来的习惯而去使用它呢？
+箭头函数内部没有constructor方法，也没有prototype，所以不支持new操作。但是它对this的处理与一般的普通函数不一样。箭头函数的 this 始终指向函数定义时的this，而非执行时。
+
+```javascript
+var obj ={
+     x:121,
+     func:function(){
+       console.log(this.x);
+     },
+     test:function(){
+       setTimeout(function(){
+         alert(this);
+         this.func();//this指针转为全局
+       },1000);
+     }
+   };
+   obj.test();//alert [object Window]  func is undefined
+```
+
+```javascript
+var obj ={
+    x:121,
+    func:function(){
+      console.log(this.x);
+    },
+    test:function(){
+      setTimeout(()=>{
+        alert(this);//始终指向obj,使用起来比较安全
+        this.func()
+      },1000);
+    }
+  };
+  obj.test();//alert [object Object] //121
+```
+
+#### 10.JS面向对象
+
+面向对象的三个特点：封装、继承、多态。
+
+JS有封装和继承，没有多态，因为JS是一种弱类型语言。
