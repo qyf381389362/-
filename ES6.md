@@ -244,7 +244,7 @@ var obj ={
     test:function(){
       setTimeout(()=>{
         alert(this);//始终指向obj,使用起来比较安全
-        this.func()
+        this.func()；
       },1000);
     }
   };
