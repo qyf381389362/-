@@ -981,4 +981,45 @@ http是无状态的，一次请求结束，连接断开，下次服务器再收�
 
     需要注意的是，不是什么数据都适合放在 Cookie、localStorage 和 sessionStorage 中的。使用它们的时候，需要时刻注意是否有代码存在 XSS 注入的风险。因为只要打开控制台，你就随意修改它们的值，也就是说如果你的网站中有 XSS 的风险，它们就能对你的 localStorage 肆意妄为。所以千万不要用它们存储你系统中的敏感数据。
 
-26. ​
+26. **安全的类型检测**
+
+    在任何值上调用object原生的toString()方法，都会返回一个[object  NativeConstructorName]格式的字符串。每个类在内部都有一个[][][[Class]]属性，这个属性就指定了上述字符串中的构造函数名。
+
+    ```javascript
+    如果value是一个定义的数组
+    alert(Object.prototype.toString.call(value)); //"[object Array]"
+    ```
+
+    由于原生数组的构造函数名与全局作用域无关，因此使用toString()就能保证返回一致的值，利用这一点可以创建如下 的函数：
+
+    ```javascript
+    function isArray(value){
+      return Object.prototype.toString.call(value) == "[object Array]";
+    }
+    function isFunction(value){
+      return Object.prototype.toString.call(value) == "[object Function]"
+    }
+    function isRegExp(value){
+      return Object.prototype.toString.call(value) == "[object RegExp]"
+    }
+    //以上都是用来测试某个值是不是原生数组，函数或正则表达式
+    ```
+
+    这一技巧也广泛应用于检测原生JSON对象。Object的toString()方法不能检测非原生构造函数的构造函数名。因此，开发人员定义的任何构造函数都将返回[object Object]。
+
+    在Web开发中能够区分原生与非原生JavaScript对象非常重要。只有这样才能确切知道某个对象到底有哪些功能。
+
+27. **作用域安全的构造函数**
+
+    《JavaScript高级程序设计》（第3版）第22章里边第一些高级技巧还是很有用的，在之前去公司面试的时候都有问到。
+
+    ​
+
+28. **函数绑定**
+
+    在头条面试的时候问到了这部分的内容，尤其是关于bind()的。
+
+    ​
+
+29. **函数柯里化**
+
