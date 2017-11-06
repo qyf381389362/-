@@ -1009,17 +1009,174 @@ http是无状态的，一次请求结束，连接断开，下次服务器再收�
 
     在Web开发中能够区分原生与非原生JavaScript对象非常重要。只有这样才能确切知道某个对象到底有哪些功能。
 
-27. **作用域安全的构造函数**
+27. **内存与性能**
+
+    由于事件处理程序可以为现代Web 应用程序提供交互能力，因此许多开发人员会不分青红皂白地
+    向页面中添加大量的处理程序。在创建GUI 的语言（如C#）中，为GUI 中的每个按钮添加一个onclick
+    事件处理程序是司空见惯的事，而且这样做也不会导致什么问题。**可是在JavaScript 中，添加到页面上**
+    **的事件处理程序数量将直接关系到页面的整体运行性能**。导致这一问题的原因是多方面的。首先，**每个**
+    **函数都是对象，都会占用内存；内存中的对象越多，性能就越差。其次，必须事先指定所有事件处理程**
+    **序而导致的DOM访问次数，会延迟整个页面的交互就绪时间**。事实上，从如何利用好事件处理程序的
+    角度出发，还是有一些方法能够提升性能的。
+
+    ​
+
+    **事件委托：**
+
+    对“事件处理程序过多”问题的解决方案就是事件委托。事件委托利用了事件冒泡，只指定一个事
+    件处理程序，就可以管理某一类型的所有事件。例如，click 事件会一直冒泡到document 层次。也就
+    是说，我们可以为整个页面指定一个onclick 事件处理程序，而不必给每个可单击的元素分别添加事
+    件处理程序。以下面的HTML 代码为例。
+
+
+    ```html
+    <ul id="myLinks">
+      <li id="goSomewhere">Go somewhere</li>
+      <li id="doSomething">Do something</li>
+      <li id="sayHi">Say hi</li>
+    </ul>	
+    ```
+
+    其中包含3 个被单击后会执行操作的列表项。按照传统的做法，需要像下面这样为它们添加3 个事
+    件处理程序。
+
+    ```javascript
+    var item1 = document.getElementById("goSomewhere");
+    var item2 = document.getElementById("doSomething");
+    var item3 = document.getElementById("sayHi");
+    EventUtil.addHandler(item1, "click", function(event){
+    	location.href = "http://www.wrox.com";
+    });
+    EventUtil.addHandler(item2, "click", function(event){
+    	document.title = "I changed the document's title";
+    });
+    EventUtil.addHandler(item3, "click", function(event){
+    	alert("hi");
+    });
+    ```
+
+    如果在一个复杂的Web 应用程序中，对所有可单击的元素都采用这种方式，那么结果就会有数不
+    清的代码用于添加事件处理程序。此时，可以利用事件委托技术解决这个问题。**使用事件委托，只需在**
+    **DOM 树中尽量最高的层次上添加一个事件处理程序**，如下面的例子所示。
+
+    ```javascript
+    var list = document.getElementById("myLinks");
+    EventUtil.addHandler(list, "click", function(event){
+      event = EventUtil.getEvent(event);
+      var target = EventUtil.getTarget(event);
+      switch(target.id){
+        case "doSomething":
+          document.title = "I changed the document's title";
+          break;
+        case "goSomewhere":
+          location.href = "http://www.wrox.com";
+          break;
+        case "sayHi":
+            alert("hi");
+            break;
+      }
+    });
+    ```
+
+    在这段代码里，我们使用事件委托只为<ul>元素添加了一个onclick 事件处理程序。由于所有列
+    表项都是这个元素的子节点，而且它们的事件会冒泡，所以单击事件最终会被这个函数处理。我们知道，
+    事件目标是被单击的列表项，故而可以通过检测id 属性来决定采取适当的操作。与前面未使用事件委
+    托的代码比一比，会发现这段代码的事前消耗更低，因为只取得了一个DOM 元素，只添加了一个事件
+    处理程序。虽然对用户来说最终的结果相同，但这种技术需要占用的内存更少。所有用到按钮的事件（多
+    数鼠标事件和键盘事件）都适合采用事件委托技术。
+    如果可行的话，也可以考虑为document 对象添加一个事件处理程序，用以处理页面上发生的某种
+    特定类型的事件。这样做与采取传统的做法相比具有如下优点。
+
+    - document 对象很快就可以访问，而且可以在页面生命周期的任何时点上为它添加事件处理程序
+
+      （无需等待DOMContentLoaded 或load 事件）。换句话说，只要可单击的元素呈现在页面上，
+
+      就可以立即具备适当的功能。
+
+    -  在页面中设置事件处理程序所需的时间更少。只添加一个事件处理程序所需的DOM 引用更少，
+
+      所花的时间也更少。
+
+    - 整个页面占用的内存空间更少，能够提升整体性能。
+
+      最适合采用事件委托技术的事件包括click、mousedown、mouseup、keydown、keyup 和keypress。
+
+      虽然mouseover 和mouseout 事件也冒泡，但要适当处理它们并不容易，而且经常需要计算元素的位置。（因为当鼠标从一个元素移到其子节点时，或者当鼠标移出该元素时，都会触发mouseout 事件。）
+
+
+
+​	**移除事件处理程序：**
+
+​	每当将事件处理程序指定给元素时，运行中的浏览器代码与支持页面交互的JavaScript 代码之间就
+​	会建立一个连接。这种连接越多，页面执行起来就越慢。如前所述，可以采用事件委托技术，限制建立
+​	的连接数量。另外，在不需要的时候移除事件处理程序，也是解决这个问题的一种方案。内存中留有那
+​	些过时不用的“空事件处理程序”（dangling event handler），也是造成Web 应用程序内存与性能问题的
+​	主要原因。
+​	在两种情况下，可能会造成上述问题。第一种情况就是从文档中移除带有事件处理程序的元素时。
+​	这可能是通过纯粹的DOM操作，例如使用removeChild()和replaceChild()方法，但更多地是发
+​	生在使用innerHTML 替换页面中某一部分的时候。如果带有事件处理程序的元素被innerHTML 删除
+​	了，那么原来添加到元素中的事件处理程序极有可能无法被当作垃圾回收。来看下面的例子。
+
+```html
+<div id="myDiv">
+	<input type="button" value="Click Me" id="myBtn">
+</div>
+<script type="text/javascript">
+	var btn = document.getElementById("myBtn");
+	btn.onclick = function(){
+		//先执行某些操作
+		document.getElementById("myDiv").innerHTML = "Processing..."; //麻烦了！
+	};
+</script>
+```
+
+​	这里，有一个按钮被包含在<div>元素中。为避免双击，单击这个按钮时就将按钮移除并替换成一
+​	条消息；这是网站设计中非常流行的一种做法。但问题在于，当按钮被从页面中移除时，它还带着一个
+​	事件处理程序呢。在<div>元素上设置innerHTML 可以把按钮移走，但事件处理程序仍然与按钮保持
+​	着引用关系。有的浏览器（尤其是IE）在这种情况下不会作出恰当地处理，它们很有可能会将对元素和
+​	对事件处理程序的引用都保存在内存中。如果你知道某个元素即将被移除，那么最好手工移除事件处理
+​	程序，如下面的例子所示。
+
+```html
+<div id="myDiv">
+	<input type="button" value="Click Me" id="myBtn">
+</div>
+<script typ	e="text/javascript">
+	var btn = document.getElementById("myBtn");
+	btn.onclick = function(){
+		//先执行某些操作
+		btn.onclick = null; //移除事件处理程序
+		document.getElementById("myDiv").innerHTML = "Processing...";
+	};
+</script>
+```
+
+​	在此，我们在设置<div>的innerHTML 属性之前，先移除了按钮的事件处理程序。这样就确保了内存可以被再次利用，而从DOM 中移除按钮也做到了干净利索。
+注意，在事件处理程序中删除按钮也能阻止事件冒泡。目标元素在文档中是事件冒泡的前提。
+
+​	采用事件委托也有助于解决这个问题。如果事先知道将来有可能使用innerHTML替换掉页面中的某一部分，那么就可以不直接把事件处理程序添加到该部分的元素中。而通过把事件处理程序指定给较高层次的元素，同样能够处理该区域中的事件。
+
+​	导致“空事件处理程序”的另一种情况，就是卸载页面的时候。毫不奇怪，IE8 及更早版本在这种情况下依然是问题最多的浏览器，尽管其他浏览器或多或少也有类似的问题。如果在页面被卸载之前没有清理干净事件处理程序，那它们就会滞留在内存中。每次加载完页面再卸载页面时（可能是在两个页面间来回切换，也可以是单击了“刷新”按钮），内存中滞留的对象数目就会增加，因为事件处理程序占用的内存并没有被释放。
+​	一般来说，最好的做法是在页面卸载之前，先通过onunload 事件处理程序移除所有事件处理程序。在此，事件委托技术再次表现出它的优势——需要跟踪的事件处理程序越少，移除它们就越容易。对这种类似撤销的操作，我们可以把它想象成：只要是通过onload 事件处理程序添加的东西，最后都要通过onunload 事件处理程序将它们移除。
+
+25. ​
+
+
+
+25. ​
+
+    ​
+
+26. **作用域安全的构造函数**
 
     《JavaScript高级程序设计》（第3版）第22章里边第一些高级技巧还是很有用的，在之前去公司面试的时候都有问到。
 
     ​
 
-28. **函数绑定**
+27. **函数绑定**
 
     在头条面试的时候问到了这部分的内容，尤其是关于bind()的。
 
     ​
 
-29. **函数柯里化**
-
+28. **函数柯里化**
