@@ -84,14 +84,337 @@ var result = addSomeNumber(100); //300
 
 5. **执行环境及作用域**
 
-   执行环境定义了变量或函数有权访问的其他数据，决定了它们各自的行为。
+   执行环境定义了变量或函数有权访问的其他数据，决定了它们各自的行为。某个执行环境中的所有代码执行完
+   毕后，该环境被销毁，保存在其中的所有变量和函数定义也随之销毁（全局执行环境直到应用程序退出——例如关闭网页或浏览器——时才会被销毁）。
+
+   **JS中没有块级作用域**
+
+   使用var 声明的变量会自动被添加到最接近的环境中。在函数内部，最接近的环境就是函数的局部环境；在with 语句中，最接近的环境是函数环境。如果初始化变量时没有使用var 声明，该变量会自动被添加到全局环境。如下所示：
+
+
+   ```javascript
+   function add(num1, num2) {
+     var sum = num1 + num2;
+     return sum;
+   }
+   var result = add(10, 20); //30
+   alert(sum); //由于sum 不是有效的变量，因此会导致错误
+   ```
+
+   如果省略这个例子中的var 关键字，那么当add()执行完毕后，sum 也将可以访问到：
+
+   ```javascript
+   function add(num1, num2) {
+     sum = num1 + num2;
+     return sum;
+   }
+   var result = add(10, 20); //30
+   alert(sum); //30
+   ```
+
+
+4. **闭包**
+
+
+   闭包是一个抽象概念，它不存在对应的语法。如下，die函数用到你外面的变量lives，就是闭包。
+
+   ```javascript
+   function xxx(){
+      var lives = 30;
+      function die(){
+          lives -= 1;
+          return lives;
+      }
+      return die;         
+   }
+   var dieFn = xxx();        
+   var currentLives = dieFn();
+   ```
+
+   结论：**一个函数用到了它外面的变量就是闭包**，即一个函数return了它外面的变量。这种用法叫做闭包。
+
+   **闭包的作用：**
+
+   让别人可以**“间接访问”**。换句话说，**''隐藏一个变量"**。
+
+   上面xxx这个函数是我们在做一个游戏，在写其中关于「还剩几条命」的代码。 如果不用闭包，你可以直接用一个全局变量：
+
+   ```javascript
+    windows.lives = 30  //还有30条命
+   ```
+
+   上面这行代码 lives 是一个全局变量谁都可以访问，万一不小心把windows.lives的值改成 -1 了怎么办。所以我们不能让别人「直接访问」这个变量。怎么办呢？**用xxx函数，造出一个局部变量。但又为了 [别人又能够访问] 到这个变量,并且实现 [游戏中的减命] 功能， 用die()函数return lives变量的值那么别人就可以间接访问到这个隐藏变量。**
+
+
+
+​	**闭包造成内存泄漏：**
+
+​	内存泄露是指你用不到（访问不到）的变量，依然占居着内存空间，不能被再次利用起来。
+
+    	闭包里面的变量明明就是我们需要的变量（lives），所以不会出现内存泄漏。
+
+    	有人说闭包会造成内存泄漏，什么情况？
+
+    	因为 IE。IE 有 bug，IE 在我们使用完闭包之后，依然回收不了闭包里面引用的变量。这是 IE 的问题，不是闭包的问题。
+
+5. **立即执行函数**
+
+   1. 什么是立即执行函数
+
+      声明一个匿名函数，立即执行它。
+
+      ```javascript
+      !function(){
+         var lives =30
+         console.log(lives)
+       }.call()
+      ```
+
+      保留字function前面感叹号可以换成 + - ~ 等符号，也可以换成括号。
+
+   2. 立即函数的作用
+
+      作用只有一个：**创建一个独立的作用域。**这个作用域里面的变量，外面访问不到（**避免了变量污染**）。
+
+      所以上面[还剩几条命的代码] 除了使用[闭包]还可以改写成立即执行函数：
+
+      ```javascript
+      ！function (){
+         var lives = 30
+         function die(){
+             lives -= 1
+             return lives
+         }
+         return die
+      }.call()
+      ```
+
+      看一道经典的面试题：
+
+      ```javascript
+      var liList = ul.getElementsByTagName('li')
+      for(var i=0; i<6; i++){
+        liList[i].onclick = function(){
+          alert(i); // 为什么 alert 出来的总是 6，而不是 0、1、2、3、4、5
+        }
+      }
+      ```
+
+      为什么每次alert结果都是6呢？
+
+      因为i是贯穿整个作用域的（即window下的），而不是给每个div分配一个i。for循环执行完后i已经变成6了（注意不是5），然后用户一定是在for循环运行完之后才点击的，此时i的结果已经为6了。
+
+      那我们怎么解决这个问题呢？明显我们要给每个li创建一个独立的作用域，一种方法就是用[立即执行函数]。
+
+      ```javascript
+      var liList = ul.getElementsByTagName('li')
+      for(var i=0; i<6; i++){
+        !function(ii){
+          liList[ii].onclick = function(){
+            alert(ii) // 0、1、2、3、4、5
+          }
+        }(i)
+      }
+      ```
+
+      在立即执行函数执行的时候，i 的值被赋值给 ii，此后 ii 的值一直不变。
+
+      i 的值从 0 变化到 5，对应 6 个立即执行函数，这 6 个立即执行函数里面的 ii 「分别」是 0、1、2、3、4、5。
+
+---
+
+### 对象
+
+#### **一、创建对象的方式**
+
+1. **通过object创建**
+
+   ```javascript
+   var person = new Object();
+   person.name = "Nicholas";
+   person.age = 29;
+   person.job = "Software Engineer";
+   person.sayName = function(){
+   alert(this.name);
+   };
+   ```
+
+2. **对象字面量**
+
+   ```javascript
+   var person = {
+   	name: "Nicholas",
+   	age: 29,
+   	job: "Software Engineer",
+   	sayName: function(){
+   		alert(this.name);
+   	}
+   };	
+   ```
+
+3. **工厂模式**
+
+   虽然Object 构造函数或对象字面量都可以用来创建单个对象，但这些方式有个明显的缺点：使用同一个接口创建很多对象，会产生大量的重复代码。为解决这个问题，人们开始使用工厂模式的一种变体。
+
+   考虑到在ECMAScript 中无法创建类，开发人员就发明了一种函数，用函数来封装以特定接口创建对象的细节，如下面的例子所示。
+
+   ```javascript
+   function createPerson(name, age, job){
+   	var o = new Object();
+   	o.name = name;
+   	o.age = age;
+   	o.job = job;
+   	o.sayName = function(){
+   		alert(this.name);
+   	};
+   	return o;
+   }
+   var person1 = createPerson("Nicholas", 29, "Software Engineer");
+   var person2 = createPerson("Greg", 27, "Doctor");
+   ```
+
+   工厂模式虽然解决了创建多个相似对象的问题，但却没有解决对象识别的问题（即怎样知道一个对象的类型）。
+
+4. **构造函数模式**
+
+   像Object 和Array 这样的原生构造函数，在运行时会自动出现在执行环境中。此外，也可以创建自定义的构造函数，从而定义自定义对象类型的属性和方法。例如，可以使用构造函数模式将前面的例子重写如下。
+
+   ```javascript
+   function Person(name, age, job){
+   	this.name = name;
+   	this.age = age;
+   	this.job = job;
+   	this.sayName = function(){
+   		alert(this.name);
+   	};
+   }
+   var person1 = new Person("Nicholas", 29, "Software Engineer");
+   var person2 = new Person("Greg", 27, "Doctor");
+   ```
+
+   提到检测对象类型，instanceof操作符要更可靠一些。我们在这个例子中创建的所有对象既是Object 的实例，同时也是Person的实例，这一点通过instanceof 操作符可以得到验证。
+
+   ```javascript
+   alert(person1 instanceof Object); //true
+   alert(person1 instanceof Person); //true
+   alert(person2 instanceof Object); //true
+   alert(person2 instanceof Person); //true
+   ```
+
+   创建自定义的构造函数意味着将来可以将它的实例标识为一种特定的类型；而这正是构造函数模式胜过工厂模式的地方。
+
+   ​
+
+   **将构造函数当作函数**
+
+   构造函数与其他函数的唯一区别，就在于调用它们的方式不同。不过，构造函数毕竟也是函数，不存在定义构造函数的特殊语法。任何函数，只要通过new 操作符来调用，那它就可以作为构造函数；而任何函数，如果不通过new 操作符来调用，那它跟普通函数也不会有什么两样。例如，前面例子中定义的Person()函数可以通过下列任何一种方式来调用。
+
+   ```javascript
+   // 当作构造函数使用
+   var person = new Person("Nicholas", 29, "Software Engineer");
+   person.sayName(); //"Nicholas"
+   // 作为普通函数调用
+   Person("Greg", 27, "Doctor"); // 添加到window,当在全局作用域中调用一个函数时，this 对象总是指向                                  Global 对象（在浏览器中就是window 对象）
+   window.sayName(); //"Greg"
+   // 在另一个对象的作用域中调用
+   var o = new Object();
+   Person.call(o, "Kristen", 25, "Nurse");
+   o.sayName(); //"Kristen"
+   ```
+
+   ​
+
+   **构造函数的问题**
+
+   使用构造函数的主要问题，就是每个方法都要在每个实例上重新创建一遍。在前面的例子中，person1 和person2 都有一个名为sayName()的方法，但那两个方法不是同一个Function 的实例。不要忘了——ECMAScript 中的函数是对象，因此每定义一个函数，也就是实例化了一个对象。因此，不同实例上的同名函数是不相等的。
+
+   然而，创建两个完成同样任务的Function 实例的确没有必要；况且有this 对象在，根本不用在
+   执行代码前就把函数绑定到特定对象上面。因此，大可像下面这样，通过把函数定义转移到构造函数外
+   部来解决这个问题。
+
+   ```javascript
+   function Person(name, age, job){
+   	this.name = name;
+   	this.age = age;
+   	this.job = job;
+   	this.sayName = sayName;
+   }
+   function sayName(){
+   	alert(this.name);
+   }
+   var person1 = new Person("Nicholas", 29, "Software Engineer");
+   var person2 = new Person("Greg", 27, "Doctor");
+   ```
+
+   在这个例子中，我们把sayName()函数的定义转移到了构造函数外部。而在构造函数内部，我们将sayName 属性设置成等于全局的sayName 函数。这样一来，由于sayName 包含的是一个指向函数的指针，因此person1 和person2 对象就共享了在全局作用域中定义的同一个sayName()函数。这样做确实解决了两个函数做同一件事的问题，可是新问题又来了：在全局作用域中定义的函数实际上只能被某个对象调用，这让全局作用域有点名不副实。而更让人无法接受的是：如果对象需要定义很多方法，那么就要定义很多个全局函数，于是我们这个自定义的引用类型就丝毫没有封装性可言了。好在，这些问题可以通过使用原型模式来解决。
+
+5. **原型模式**
+
+   我们创建的每个函数都有一个prototype（原型）属性，这个属性是一个指针，指向一个对象，而这个对象的用途是包含可以由特定类型的所有实例共享的属性和方法。使用原型对象的好处是可以让所有对象实例共享它所包含的属性和方法。换句话说，不必在构造函数中定义对象实例的信息，而是可以将这些信息直接添加到原型对象中，如下面的例子所示。
+
+   ```javascript
+   function Person(){
+   }
+   Person.prototype.name = "Nicholas";
+   Person.prototype.age = 29;
+   Person.prototype.job = "Software Engineer";
+   Person.prototype.sayName = function(){
+   	alert(this.name);
+   };
+   var person1 = new Person();
+   person1.sayName(); //"Nicholas"
+   var person2 = new Person();
+   person2.sayName(); //"Nicholas"
+   alert(person1.sayName == person2.sayName); //true
+   ```
+
+   虽然可以通过对象实例访问保存在原型中的值，但却不能通过对象实例重写原型中的值。如果我们在实例中添加了一个属性，而该属性与实例原型中的一个属性同名，那我们就在实例中创建该属性，该属性将会屏蔽原型中的那个属性。来看下面的例子。
+
+   ```javascript
+   function Person(){
+   }
+   Person.prototype.name = "Nicholas";
+   Person.prototype.age = 29;
+   Person.prototype.job = "Software Engineer";
+   Person.prototype.sayName = function(){
+   	alert(this.name);
+   };
+   var person1 = new Person();
+   var person2 = new Person();
+   person1.name = "Greg";
+   alert(person1.name); //"Greg"——来自实例
+   alert(person2.name); //"Nicholas"——来自原型
+   ```
+
+   当为对象实例添加一个属性时，这个属性就会屏蔽原型对象中保存的同名属性；换句话说，添加这个属性只会阻止我们访问原型中的那个属性，但不会修改那个属性。即使将这个属性设置为null，也只会在实例中设置这个属性，而不会恢复其指向原型的连接。不过，使用delete 操作符则可以完全删除实例属性，从而让我们能够重新访问原型中的属性，如下所示。
+
+   ```javascript
+   function Person(){
+   }
+   Person.prototype.name = "Nicholas";
+   Person.prototype.age = 29;
+   Person.prototype.job = "Software Engineer";
+   Person.prototype.sayName = function(){
+   	alert(this.name);
+   };
+   var person1 = new Person();
+   var person2 = new Person();
+   person1.name = "Greg";
+   alert(person1.name); //"Greg"——来自实例
+   alert(person2.name); //"Nicholas"——来自原型
+   delete person1.name;
+   alert(person1.name); //"Nicholas"——来自原型
+   ```
+
+   ​
+
+   ​
 
 6. ​
 
-7. **立即执行函数**
+7. ​
 
 8. ​
-
 
 
 
