@@ -225,7 +225,7 @@ var result = addSomeNumber(100); //300
 
 ### 对象
 
-#### **一、创建对象的方式**
+#### **创建对象的方式**
 
 1. **通过object创建**
 
@@ -406,15 +406,148 @@ var result = addSomeNumber(100); //300
    alert(person1.name); //"Nicholas"——来自原型
    ```
 
-   ​
+   要取得对象上所有可枚举的实例属性，可以使用ECMAScript 5 的Object.keys()方法。这个方法接收一个对象作为参数，返回一个包含所有可枚举属性的字符串数组。例如：
+
+   ```javascript
+   function Person(){
+   }
+   Person.prototype.name = "Nicholas";
+   Person.prototype.age = 29;
+   Person.prototype.job = "Software Engineer";
+   Person.prototype.sayName = function(){
+   	alert(this.name);
+   };
+   var keys = Object.keys(Person.prototype);
+   alert(keys); //"name,age,job,sayName"
+   var p1 = new Person();
+   p1.name = "Rob";
+   p1.age = 31;
+   var p1keys = Object.keys(p1);
+   alert(p1keys); //"name,age"
+   ```
+
+   这里，变量keys 中将保存一个数组，数组中是字符串"name"、"age"、"job"和"sayName"。这个顺序也是它们在for-in 循环中出现的顺序。如果是通过Person 的实例调用，则Object.keys()返回的数组只包含"name"和"age"这两个实例属性。如果你想要得到所有实例属性，无论它是否可枚举，都可以使用Object.getOwnPropertyNames()方法。
+
+   ```javascript
+   var keys = Object.getOwnPropertyNames(Person.prototype);
+   alert(keys); //"constructor,name,age,job,sayName"
+   ```
+
+   注意结果中包含了不可枚举的constructor 属性。Object.keys()和Object.getOwnProperty-Names()方法都可以用来替代for-in 循环。
 
    ​
 
-6. ​
+   **更简单的原型语法**
 
-7. ​
+   ```javascript
+   function Person(){
+   }
+   Person.prototype = {
+   	name : "Nicholas",
+   	age : 29,
+   	job: "Software Engineer",
+   	sayName : function () {
+   		alert(this.name);
+   	}
+   };
+   ```
 
-8. ​
+   尽管可以随时为原型添加属性和方法，并且修改能够立即在所有对象实例中反映出来，但如果是重写整个原型对象，那么情况就不一样了。我们知道，调用构造函数时会为实例添加一个指向最初原型的[[Prototype]]指针，而把原型修改为另外一个对象就等于切断了构造函数与最初原型之间的联系。
+   **请记住：实例中的指针仅指向原型，而不指向构造函数。**看下面的例子。
+
+   ​
+
+   **原型对象的问题**
+
+   原型模式也不是没有缺点。首先，它省略了为构造函数传递初始化参数这一环节，结果所有实例在默认情况下都将取得相同的属性值。虽然这会在某种程度上带来一些不方便，但还不是原型的最大问题。原型模式的最大问题是由其共享的本性所导致的。
+   原型中所有属性是被很多实例共享的，这种共享对于函数非常合适。对于那些包含基本值的属性倒也说得过去，毕竟（如前面的例子所示），通过在实例上添加一个同名属性，可以隐藏原型中的对应属性。然而，对于包含引用类型值的属性来说，问题就比较突出了。来看下面的例子。
+
+   ```javascript
+   function Person(){
+   }
+   Person.prototype = {
+   	constructor: Person,
+   	name : "Nicholas",
+   	age : 29,
+   	job : "Software Engineer",
+   	friends : ["Shelby", "Court"],
+   	sayName : function () {
+   		alert(this.name);
+   	}
+   };
+   var person1 = new Person();
+   var person2 = new Person();
+   person1.friends.push("Van");
+   alert(person1.friends); //"Shelby,Court,Van"
+   alert(person2.friends); //"Shelby,Court,Van"
+   alert(person1.friends === person2.friends); //true
+   ```
+
+   假如我们的初衷就是像这样在所有实例中共享一个数组，那么对这个结果我没有话可说。可是，实例一般都是要有属于自己的全部属性的。而这个问题正是我们**很少看到有人单独使用原型模式**的原因所在。
+
+6. **组合使用构造函数模式和原型模式**
+
+   创建自定义类型的最常见方式，就是组合使用构造函数模式与原型模式。**构造函数模式用于定义实例属性**，而**原型模式用于定义方法和共享的属性**。结果，每个实例都会有自己的一份实例属性的副本，但同时又共享着对方法的引用，**最大限度地节省了内存**。另外，这种混成模式还支持向构造函数传递参数；可谓是集两种模式之长。下面的代码重写了前面的例子。
+
+   ```javascript
+   function Person(name, age, job){
+   	this.name = name;
+   	this.age = age;
+   	this.job = job;
+   	this.friends = ["Shelby", "Court"];
+   }
+   Person.prototype = {
+   	constructor : Person,
+   	sayName : function(){
+   		alert(this.name);
+   	}
+   }
+   var person1 = new Person("Nicholas", 29, "Software Engineer");
+   var person2 = new Person("Greg", 27, "Doctor");
+   person1.friends.push("Van");
+   alert(person1.friends); //"Shelby,Count,Van"
+   alert(person2.friends); //"Shelby,Count"
+   alert(person1.friends === person2.friends); //false
+   alert(person1.sayName === person2.sayName); //true
+   ```
+
+   **这种构造函数与原型混成的模式，是目前在ECMAScript 中使用最广泛、认同度最高的一种创建自**
+   **定义类型的方法。可以说，这是用来定义引用类型的一种默认模式。**
+
+7. **动态原型模式**
+
+   动态原型模式它把所有信息都封装在了构造函数中，而通过在构造函数中初始化原型（仅在必要的情况下），又保持了同时使用构造函数和原型的优点。换句话说，可以通过检查某个应该存在的方法是否有效，来决定是否需要初始化原型。来看一个例子。
+
+   ```javascript
+   function Person(name, age, job){
+   	//属性
+   	this.name = name;
+   	this.age = age;
+   	this.job = job;
+     //方法
+   	if (typeof this.sayName != "function"){
+   		Person.prototype.sayName = function(){
+   			alert(this.name);
+   		};
+   	}
+   }
+   var friend = new Person("Nicholas", 29, "Software Engineer");
+   friend.sayName();
+   ```
+
+   这里只在sayName()方法不存在的情况下，才会将它添加到原型中。这段代码只会在初次调用构造函数时才会执行。此后，原型已经完成初始化，不需要再做什么修改了。不过要记住，这里对原型所做的修改，能够立即在所有实例中得到反映。因此，这种方法确实可以说非常完美。
+
+
+---
+
+### 继承
+
+
+
+
+
+
+
 
 
 
